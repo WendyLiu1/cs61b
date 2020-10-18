@@ -1,17 +1,31 @@
+/* Invariants
+1.  nextFirst is the position used when a new item
+    is added to the front of the list.
+2.  nextLast is the position used when a new item
+    is added to the back of the list.
+*/
 public class ArrayDeque<T> {
     private T[] dequeArray;
     private int size;
     private int nextFirst;
     private int nextLast;
 
+    private static double usageFactor = 0.25;
 
+    /**
+     * Default constructor
+     */
     public ArrayDeque() {
-        size = 0;
-        dequeArray = (T[]) new Object[8];
-        nextFirst = 0;
-        nextLast = 0;
+        this.size = 0;
+        this.dequeArray = (T[]) new Object[8];
+        this.nextFirst = 0;
+        this.nextLast = 1;
     }
 
+    /**
+     * Deep copy constructor
+     * @param other other array deque to copy
+     */
     public ArrayDeque(ArrayDeque other) {
         this();
         int otherSize = other.size();
@@ -20,10 +34,40 @@ public class ArrayDeque<T> {
         }
     }
 
-    private void resize(int capacity) {
+    /**
+     * Increases array size to capacity
+     * @param capacity new array size
+     */
+    private void increaseSize(int capacity) {
         T[] newDeque = (T[]) new Object[capacity];
-        System.arraycopy(dequeArray, 0, newDeque, 0, size);
-        dequeArray = newDeque;
+        System.arraycopy(this.dequeArray, 0, newDeque, 0, this.size);
+        this.dequeArray = newDeque;
+    }
+
+    /**
+     * Decreases the array size to capacity
+     * @param capacity new array size
+     */
+    private void decreaseSize(int capacity) {
+        T[] newDeque = (T[]) new Object[capacity];
+        int originalFirst = this.plusOne(this.nextFirst);
+        System.arraycopy(this.dequeArray, originalFirst, newDeque, 0, this.size);
+        this.nextFirst = this.minusOne(0);
+        this.nextLast = this.size;
+        this.dequeArray = newDeque;
+    }
+
+    /**
+     * For arrays of length 16 or more, the usage factor should always be at least 25%
+     */
+    private void memeoryManagement() {
+        int dequeArraySize = this.dequeArray.length;
+        if (dequeArraySize > 15) {
+            double usageRatio = this.size / dequeArraySize;
+            if (usageRatio < ArrayDeque.usageFactor) {
+                this.decreaseSize(dequeArraySize / 2);
+            }
+        }
     }
 
     /**
@@ -32,17 +76,12 @@ public class ArrayDeque<T> {
      */
     public void addFirst(T item) {
         // resize at len - 1 to make sure next first and next last will never meet
-        if (size == dequeArray.length - 1) {
-            this.resize(size * 2);
+        if (this.size == this.dequeArray.length - 1) {
+            this.increaseSize(size * 2);
         }
-        dequeArray[nextFirst] = item;
-        if (nextFirst == 0) {
-            nextFirst = dequeArray.length - 1;
-        }
-        else {
-            nextFirst--;
-        }
-        size++;
+        this.dequeArray[this.nextFirst] = item;
+        this.nextFirst = this.minusOne(this.nextFirst);
+        this.size++;
     }
 
     /**
@@ -51,19 +90,19 @@ public class ArrayDeque<T> {
      */
     public void addLast(T item) {
         // resize at len - 1 to make sure next first and next last will never meet
-        if (size == dequeArray.length - 1) {
-            this.resize(size * 2);
+        if (this.size == this.dequeArray.length - 1) {
+            this.increaseSize(this.size * 2);
         }
-        dequeArray[nextLast] = item;
-        nextLast = (nextLast + 1) % dequeArray.length;
-        size++;
+        this.dequeArray[this.nextLast] = item;
+        this.nextLast = this.plusOne(this.nextLast);
+        this.size++;
     }
 
     /**
      * Returns true if deque is empty, false otherwise.
      */
     public boolean isEmpty() {
-        return size == 0;
+        return this.size == 0;
     }
 
     /**
@@ -71,7 +110,7 @@ public class ArrayDeque<T> {
      * @return the number of items in the deque .
      */
     public int size() {
-        return size;
+        return this.size;
     }
 
     /**
@@ -79,12 +118,8 @@ public class ArrayDeque<T> {
      * Once all the items have been printed, print out a new line.
      */
     public void printDeque() {
-        int begin = (nextFirst + 1) % dequeArray.length;
-        int count = 0;
-        while (count < size) {
-            System.out.print(dequeArray[(begin + count) % dequeArray.length]);
-            System.out.print(" ");
-            count++;
+        for (int i = 0; i < this.size; i++) {
+            System.out.print(this.get(i) + " ");
         }
         System.out.println();
     }
@@ -95,13 +130,14 @@ public class ArrayDeque<T> {
      * @return the item at the front of the deque. If no such item exists, return null
      */
     public T removeFirst() {
-        if (isEmpty()) {
+        if (this.isEmpty()) {
             return null;
         }
-        nextFirst = (nextFirst + 1) % dequeArray.length;
-        T item = dequeArray[nextFirst];
-        dequeArray[nextFirst] = null;
-        size--;
+        int firstIndex = this.plusOne(this.nextFirst);
+        T item = this.dequeArray[this.nextFirst];
+        this.dequeArray[firstIndex] = null;
+        this.size--;
+        this.memeoryManagement();
         return item;
     }
 
@@ -114,15 +150,11 @@ public class ArrayDeque<T> {
         if (isEmpty()) {
             return null;
         }
-        if (nextLast == 0) {
-            nextLast = dequeArray.length - 1;
-        }
-        else {
-            nextLast--;
-        }
-        T item = dequeArray[nextLast];
-        dequeArray[nextLast] = null;
-        size--;
+        int lastIdx = this.minusOne(this.nextLast);
+        T item = this.dequeArray[lastIdx];
+        this.dequeArray[lastIdx] = null;
+        this.size--;
+        this.memeoryManagement();
         return item;
     }
 
@@ -136,7 +168,38 @@ public class ArrayDeque<T> {
         if (index < 0 || index > size() - 1) {
             return null;
         }
-        int idx = (nextFirst + 1 + index) % dequeArray.length;
+        int idx = this.plusX(nextFirst, index + 1);
         return dequeArray[idx];
+    }
+
+    /**
+     * Returns the new idx in the circular array when adding by one
+     * @param idx the index to be added to
+     * @return the new index
+     */
+    private int plusOne(int idx) {
+        return this.plusX(idx, 1);
+    }
+
+    /**
+     * Returns the new idx in the circular array when adding by one
+     * @param idx the index to be added to
+     * @return the new index
+     */
+    private int plusX(int idx, int x) {
+        return (idx + x) % this.dequeArray.length;
+    }
+
+    /**
+     * Returns the new index when subtracting one from a circular array
+     * @param idx the idx to be subtracted from
+     * @return the new index
+     */
+    private int minusOne(int idx) {
+        if (idx == 0) {
+            return this.dequeArray.length - 1;
+        } else {
+            return idx - 1;
+        }
     }
 }
