@@ -1,10 +1,10 @@
 public class LinkedListDeque<T> {
-    public class ListNode<T> {
-        public T item;
-        public ListNode prev;
-        public ListNode next;
+    private class ListNode<T> {
+        T item;
+        ListNode prev;
+        ListNode next;
 
-        public ListNode(T i, ListNode pre, ListNode nxt) {
+        private ListNode(T i, ListNode pre, ListNode nxt) {
             this.item = i;
             this.prev = pre;
             this.next = nxt;
@@ -25,7 +25,7 @@ public class LinkedListDeque<T> {
     }
 
     /**
-     * Deepcopy constructor
+     * Deep copy constructor
      * @param other other LinkedListDeque to copy
      */
     public LinkedListDeque(LinkedListDeque other) {

@@ -1,7 +1,9 @@
 /* Invariants
-1.  nextFirst is the position used when a new item
+1.  For an empty list, the absolute difference between
+    nextFirst and nextLast should always be 1.
+2.  nextFirst is the position used when a new item
     is added to the front of the list.
-2.  nextLast is the position used when a new item
+3.  nextLast is the position used when a new item
     is added to the back of the list.
 */
 public class ArrayDeque<T> {
@@ -16,8 +18,8 @@ public class ArrayDeque<T> {
      * Default constructor
      */
     public ArrayDeque() {
-        this.size = 0;
         this.dequeArray = (T[]) new Object[8];
+        this.size = 0;
         this.nextFirst = 0;
         this.nextLast = 1;
     }
@@ -29,7 +31,7 @@ public class ArrayDeque<T> {
     public ArrayDeque(ArrayDeque other) {
         this();
         int otherSize = other.size();
-        for (int i = 0; i < otherSize - 1; i++) {
+        for (int i = 0; i < otherSize; i++) {
             this.addLast((T) other.get(i));
         }
     }
@@ -40,8 +42,13 @@ public class ArrayDeque<T> {
      */
     private void increaseSize(int capacity) {
         T[] newDeque = (T[]) new Object[capacity];
-        System.arraycopy(this.dequeArray, 0, newDeque, 0, this.size);
+        for (int i = 0; i < this.size; i++) {
+            newDeque[i] = this.get(i);
+        }
+        // change deque should happen before minusOne operation
         this.dequeArray = newDeque;
+        this.nextFirst = this.minusOne(0);
+        this.nextLast = this.size;
     }
 
     /**
@@ -50,20 +57,22 @@ public class ArrayDeque<T> {
      */
     private void decreaseSize(int capacity) {
         T[] newDeque = (T[]) new Object[capacity];
-        int originalFirst = this.plusOne(this.nextFirst);
-        System.arraycopy(this.dequeArray, originalFirst, newDeque, 0, this.size);
+        for (int i = 0; i < this.size; i++) {
+            newDeque[i] = this.get(i);
+        }
+        // change deque should happen before the minus one operation
+        this.dequeArray = newDeque;
         this.nextFirst = this.minusOne(0);
         this.nextLast = this.size;
-        this.dequeArray = newDeque;
     }
 
     /**
      * For arrays of length 16 or more, the usage factor should always be at least 25%
      */
-    private void memeoryManagement() {
+    private void memoryManagement() {
         int dequeArraySize = this.dequeArray.length;
         if (dequeArraySize > 15) {
-            double usageRatio = this.size / dequeArraySize;
+            double usageRatio = (double) this.size / dequeArraySize;
             if (usageRatio < ArrayDeque.usageFactor) {
                 this.decreaseSize(dequeArraySize / 2);
             }
@@ -76,8 +85,8 @@ public class ArrayDeque<T> {
      */
     public void addFirst(T item) {
         // resize at len - 1 to make sure next first and next last will never meet
-        if (this.size == this.dequeArray.length - 1) {
-            this.increaseSize(size * 2);
+        if (this.size == this.dequeArray.length) {
+            this.increaseSize(this.size * 2);
         }
         this.dequeArray[this.nextFirst] = item;
         this.nextFirst = this.minusOne(this.nextFirst);
@@ -90,7 +99,7 @@ public class ArrayDeque<T> {
      */
     public void addLast(T item) {
         // resize at len - 1 to make sure next first and next last will never meet
-        if (this.size == this.dequeArray.length - 1) {
+        if (this.size == this.dequeArray.length) {
             this.increaseSize(this.size * 2);
         }
         this.dequeArray[this.nextLast] = item;
@@ -134,11 +143,12 @@ public class ArrayDeque<T> {
             return null;
         }
         int firstIndex = this.plusOne(this.nextFirst);
-        T item = this.dequeArray[this.nextFirst];
+        T firstItem = this.dequeArray[firstIndex];
         this.dequeArray[firstIndex] = null;
         this.size--;
-        this.memeoryManagement();
-        return item;
+        this.nextFirst = firstIndex;
+        this.memoryManagement();
+        return firstItem;
     }
 
     /**
@@ -154,22 +164,23 @@ public class ArrayDeque<T> {
         T item = this.dequeArray[lastIdx];
         this.dequeArray[lastIdx] = null;
         this.size--;
-        this.memeoryManagement();
+        this.nextLast = lastIdx;
+        this.memoryManagement();
         return item;
     }
 
     /**
      * Gets the item at the given index, where 0 is the front, 1 is the next item,
      * and so forth. If no such item exists, returns null.
-     * @param index
-     * @return
+     * @param index index of item to get
+     * @return the item at index
      */
     public T get(int index) {
-        if (index < 0 || index > size() - 1) {
+        if (index < 0 || index > this.size() - 1) {
             return null;
         }
-        int idx = this.plusX(nextFirst, index + 1);
-        return dequeArray[idx];
+        int idx = this.plusX(this.nextFirst, index + 1);
+        return this.dequeArray[idx];
     }
 
     /**
