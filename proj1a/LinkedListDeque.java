@@ -12,14 +12,12 @@ public class LinkedListDeque<T> {
     }
 
     private ListNode sentinel;
-    private ListNode last;
     private int size;
 
     public LinkedListDeque() {
         sentinel = new ListNode(null);
-        last = new ListNode(null);
-        sentinel.next = last;
-        last.prev = sentinel;
+        sentinel.next = sentinel;
+        sentinel.prev = sentinel;
         size = 0;
     }
 
@@ -33,7 +31,6 @@ public class LinkedListDeque<T> {
 
     /**
      * Adds an item of type T to the front of the deque.
-     *
      * @param item new element to add to the deque
      */
     public void addFirst(T item) {
@@ -47,15 +44,14 @@ public class LinkedListDeque<T> {
 
     /**
      * Adds an item of type T to the back of the deque.
-     *
      * @param item new element to add to the deque
      */
     public void addLast(T item) {
         ListNode newNode = new ListNode(item);
-        newNode.prev = last.prev;
-        newNode.next = last;
+        newNode.prev = sentinel.prev;
+        newNode.next = sentinel;
         newNode.prev.next = newNode;
-        last.prev = newNode;
+        sentinel.prev = newNode;
         size++;
     }
 
@@ -68,7 +64,6 @@ public class LinkedListDeque<T> {
 
     /**
      * Returns the number of items in the deque.
-     *
      * @return the number of items in the deque .
      */
     public int size() {
@@ -81,7 +76,7 @@ public class LinkedListDeque<T> {
      */
     public void printDeque() {
         ListNode node = sentinel.next;
-        while (node != last) {
+        while (node != sentinel) {
             System.out.print(node.item.toString());
             System.out.print(" ");
             node = node.next;
@@ -116,9 +111,9 @@ public class LinkedListDeque<T> {
         if (isEmpty()) {
             return null;
         }
-        ListNode node = last.prev;
-        node.prev.next = last;
-        last.prev = node.prev;
+        ListNode node = sentinel.prev;
+        node.prev.next = sentinel;
+        sentinel.prev = node.prev;
         size--;
         return (T) node.item;
     }
