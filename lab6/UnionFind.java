@@ -70,7 +70,7 @@ public class UnionFind {
        allowing for fast search-time. */
     public int find(int vertex) {
         int root = vertex;
-        while (this.parent(root) > 0) {
+        while (this.parent(root) >= 0) {
             root = this.parent(root);
         }
         // path compression

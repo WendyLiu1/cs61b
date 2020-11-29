@@ -1,6 +1,5 @@
 public class BubbleGrid {
-    private int[][] bubbleGrid;
-    private UnionFind dSet;
+    private final int[][] bubbleGrid;
     public BubbleGrid(int[][] grid) {
         this.bubbleGrid = grid;
     }
@@ -70,17 +69,19 @@ public class BubbleGrid {
                 // are fallen after dart is shot
                 int preTopRowSize = djSet.sizeOf(numCols * numRows) - 1;
                 int idx = this.convertIdx(row, col);
+                if (row == 0) {
+                    djSet.union(idx, topRowIdx);
+                }
+                // current block could be connected to top row through
+                // adjacent cells
                 for (int dir = 0; dir < 4; dir += 1) {
                     int adjRow = row + dr[dir];
                     int adjCol = col + dc[dir];
-                    if (adjRow >= 0 && adjRow < numRows &&
-                            adjCol >= 0 && adjCol < numCols &&
-                            afterPop[adjRow][adjCol] == 1) {
+                    if (adjRow >= 0 && adjRow < numRows
+                            && adjCol >= 0 && adjCol < numCols
+                            && afterPop[adjRow][adjCol] == 1) {
                         djSet.union(idx, this.convertIdx(adjRow, adjCol));
                     }
-                }
-                if (row == 0) {
-                    djSet.union(idx, topRowIdx);
                 }
                 int afterTopRowSize = djSet.sizeOf(numCols * numRows) - 1;
                 // restore the popped element at time
