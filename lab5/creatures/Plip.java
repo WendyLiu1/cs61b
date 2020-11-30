@@ -1,9 +1,6 @@
 package creatures;
 
-import huglife.Creature;
-import huglife.Direction;
-import huglife.Action;
-import huglife.Occupant;
+import huglife.*;
 
 import java.awt.Color;
 import java.util.ArrayDeque;
@@ -31,14 +28,48 @@ public class Plip extends Creature {
     private int b;
 
     /**
+     * Name of the creature
+     */
+    protected static final String CREATURE_NAME = "plip";
+
+    /**
+     * Upper limit of the energy level
+     */
+    private static final double MAX_ENERGY = 2.0;
+
+    /**
+     * Energy consumption when move
+     */
+    private static final double ENERGY_CONSUMPTION_MOVE = 0.15;
+
+    /**
+     * Energy recovered when stay
+     */
+    private static final double ENERGY_RECOVERY_STAY = 0.2;
+
+    /**
+     * fraction of energy to retain when replicating.
+     */
+    private static final double ENERGY_REPLICATE_RETAIN = 0.5;
+
+    /**
+     * fraction of energy to bestow upon offspring.
+     */
+    private static final double ENERGY_REPLICATE_GIVEN = 0.5;
+
+    /**
+     * probability of taking a move when ample space available.
+     */
+    private static final double MOVE_PROBABILITY = 0.5;
+    /**
      * creates plip with energy equal to E.
      */
     public Plip(double e) {
-        super("plip");
-        r = 0;
-        g = 0;
-        b = 0;
-        energy = e;
+        super(Plip.CREATURE_NAME);
+        this.energy = Plip.determineEnergy(e);
+        this.r = 99;
+        this.g = Plip.determineGreen(this.energy);
+        this.b = 76;
     }
 
     /**
@@ -57,13 +88,14 @@ public class Plip extends Creature {
      * that you get this exactly correct.
      */
     public Color color() {
-        g = 63;
-        return color(r, g, b);
+        this.g = Plip.determineGreen(this.energy);
+        return color(this.r, this.g, this.b);
     }
 
     /**
      * Do nothing with C, Plips are pacifists.
      */
+    @Override
     public void attack(Creature c) {
         // do nothing.
     }
@@ -73,16 +105,20 @@ public class Plip extends Creature {
      * to avoid the magic number warning, you'll need to make a
      * private static final variable. This is not required for this lab.
      */
+    @Override
     public void move() {
-        // TODO
+        double newEnergy = this.energy - Plip.ENERGY_CONSUMPTION_MOVE;
+        this.energy = Plip.determineEnergy(newEnergy);
     }
 
 
     /**
      * Plips gain 0.2 energy when staying due to photosynthesis.
      */
+    @Override
     public void stay() {
-        // TODO
+        double newEnergy = this.energy + Plip.ENERGY_RECOVERY_STAY;
+        this.energy = Plip.determineEnergy(newEnergy);
     }
 
     /**
@@ -90,8 +126,11 @@ public class Plip extends Creature {
      * lost to the process. Now that's efficiency! Returns a baby
      * Plip.
      */
+    @Override
     public Plip replicate() {
-        return this;
+        double givenEnergy = this.energy * Plip.ENERGY_REPLICATE_RETAIN;
+        this.energy = Plip.determineEnergy(this.energy * Plip.ENERGY_REPLICATE_RETAIN);
+        return new Plip(givenEnergy);
     }
 
     /**
@@ -107,24 +146,69 @@ public class Plip extends Creature {
      * scoop on how Actions work. See SampleCreature.chooseAction()
      * for an example to follow.
      */
+    @Override
     public Action chooseAction(Map<Direction, Occupant> neighbors) {
-        // Rule 1
         Deque<Direction> emptyNeighbors = new ArrayDeque<>();
-        boolean anyClorus = false;
-        // TODO
-        // (Google: Enhanced for-loop over keys of NEIGHBORS?)
-        // for () {...}
 
-        if (false) { // FIXME
-            // TODO
+        boolean anyClorus = false;
+        Action action;
+
+        for (Map.Entry<Direction, Occupant> entry: neighbors.entrySet()) {
+            String occupantName = entry.getValue().name();
+            if (occupantName.equals("empty")) {
+                emptyNeighbors.add(entry.getKey());
+            } else if (occupantName.equals(Clorus.CREATURE_NAME)) {
+                anyClorus = true;
+            }
         }
 
-        // Rule 2
-        // HINT: randomEntry(emptyNeighbors)
+        if (emptyNeighbors.isEmpty()) {
+            action = new Action(Action.ActionType.STAY);
+        } else if (this.energy >= 1.0) {
+            action = new Action(Action.ActionType.REPLICATE,
+                    HugLifeUtils.randomEntry(emptyNeighbors));
+        } else if (anyClorus) {
+            if (Math.random() < Plip.MOVE_PROBABILITY) {
+                action = new Action(Action.ActionType.MOVE,
+                        HugLifeUtils.randomEntry(emptyNeighbors));
+            } else {
+                action = new Action(Action.ActionType.STAY);
+            }
+        } else {
+            action = new Action(Action.ActionType.STAY);
+        }
 
-        // Rule 3
+        return action;
+    }
 
-        // Rule 4
-        return new Action(Action.ActionType.STAY);
+    /** If the plip has zero energy,
+     * it should have a green value of 63. If it has max energy, it should
+     * have a green value of 255.
+     * @param currentEnergy current energy level
+     * @return green color
+     */
+    private static int determineGreen(double currentEnergy) {
+        int green = 63;
+        if (currentEnergy == Plip.MAX_ENERGY) {
+            green = 255;
+        } else if (currentEnergy != 0) {
+            green += (int) (96 * currentEnergy);
+        }
+        return green;
+    }
+
+    /**
+     * determine the energy of the creature, ensure it will not
+     * exceed upperBound and not below 0
+     * @param energyLevel input energy
+     * @return energy level of this creature
+     */
+    private static double determineEnergy(double energyLevel) {
+        if (energyLevel > Plip.MAX_ENERGY) {
+            energyLevel = 2.0;
+        } else if (energyLevel < 0) {
+            energyLevel = 0;
+        }
+        return energyLevel;
     }
 }
