@@ -15,7 +15,11 @@ public class ExperimentHelper {
      *  N = 8, OIPL: 13
      */
     public static int optimalIPL(int N) {
-        return 0;
+        int sum = 0;
+        for (int i = 1; i <= N; i++) {
+            sum += Math.floor(Math.log(i) / Math.log(2));
+        }
+        return sum;
     }
 
     /** Returns the average depth for nodes in an optimal BST of
@@ -27,6 +31,31 @@ public class ExperimentHelper {
      * @return
      */
     public static double optimalAverageDepth(int N) {
-        return 0;
+        return ((double) ExperimentHelper.optimalIPL(N)) / N;
+    }
+
+    /**
+     * Delete an random item in the given bst using asymmetric deletion,
+     * i.e. always take successor and then insert a new item to the tree
+     * @param tree tree that operate with
+     * @param newItem new item to be insert
+     */
+    public static void asymmetricDeletionAndInsertion(BST<Integer> tree, int newItem) {
+        int item = tree.getRandomKey();
+        tree.deleteTakingSuccessor(item);
+        tree.add(newItem);
+    }
+
+    /**
+     * Delete an random item in the given bst using symmetric deletion,
+     * i.e. randomly picking between successor and predecessor
+     * and then insert a new item to the tree
+     * @param tree tree that operate with
+     * @param newItem new item to be insert
+     */
+    public static void symmetricDeletionAndInsertion(BST<Integer> tree, int newItem) {
+        int item = tree.getRandomKey();
+        tree.deleteTakingRandom(item);
+        tree.add(newItem);
     }
 }

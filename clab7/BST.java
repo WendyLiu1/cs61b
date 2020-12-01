@@ -66,6 +66,39 @@ public class BST<Key extends Comparable<Key>> {
         return getRandomNode(root).key;
     }
 
+    /**
+     * Get current average tree depth
+     * @return current average tree depth
+     */
+    public double getAverageDepth() {
+        return ((double) this.getInternalPathLength()) / this.size();
+    }
+
+    /**
+     * Get the internal path length of current tree
+     * @return the internal path length of current tree
+     */
+    private long getInternalPathLength() {
+        return this.iplHelper(root, 0);
+    }
+
+    /**
+     * helper method to get the IPL for the given tree, use inorder traversal
+     * @param node
+     * @param depth
+     * @return
+     */
+    private long iplHelper(Node node, int depth) {
+        if (node == null) {
+            return 0;
+        }
+
+        long result = 0;
+        result += iplHelper(node.left, depth + 1);
+        result += depth;
+        result += iplHelper(node.right, depth + 1);
+        return result;
+    }
 
     /** Private methods and variables follow. There's no need to read
      *  any of this.
