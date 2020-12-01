@@ -1,7 +1,7 @@
 import java.util.Iterator;
 import java.util.Set;
 
-public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
+public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements Map61B<K, V> {
     private int size;
     private TreeNode root;
     private TreeNode removedNode;
@@ -77,9 +77,26 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     @Override
     public V remove(K key) {
+        return this.removeHelper(key, null, false);
+    }
+
+    @Override
+    public V remove(K key, V value) {
+        return this.removeHelper(key, value, true);
+    }
+
+    /**
+     * Helper method to remove node
+     * @param key
+     * @param value
+     * @param checkValue
+     * @return
+     */
+    private V removeHelper(K key, V value, boolean checkValue) {
+
         this.removedNode = null;
-        //this.root = this.deleteNodeR(this.root, key);
-        this.root = this.deleteNodeI(this.root, key);
+        //this.root = this.deleteNodeR(this.root, key, value, checkValue);
+        this.root = this.deleteNodeI(this.root, key, value, checkValue);
 
         if (this.removedNode == null) {
             return null;
@@ -93,9 +110,11 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
      * Function to delete node from BST iterative version
      * @param rootNode current root
      * @param key key to search
+     * @param value value to check
+     * @param checkValue whether the finding also need to match value
      * @return new tree after deletion
      */
-    private TreeNode deleteNodeI(TreeNode rootNode, K key) {
+    private TreeNode deleteNodeI(TreeNode rootNode, K key, V value, boolean checkValue) {
         TreeNode parent = null;
         TreeNode curr = rootNode;
 
@@ -110,7 +129,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         }
 
         // if not found, do nothing
-        if (curr == null) {
+        if (curr == null || (checkValue && value.compareTo(curr.val) != 0)) {
             return rootNode;
         }
 
@@ -157,18 +176,24 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
      * Function to delete node from BST Recursive version
      * @param node current root
      * @param key key to search
+     * @param value value to check
+     * @param checkValue whether the finding also need to match value
      * @return new tree after deletion
      */
-    private TreeNode deleteNodeR(TreeNode node, K key) {
+    private TreeNode deleteNodeR(TreeNode node, K key, V value, boolean checkValue) {
         if (node == null) {
             return null;
         }
         int cmp = key.compareTo(node.key);
         if (cmp < 0) {
-            node.left = this.deleteNodeR(node.left, key);
+            node.left = this.deleteNodeR(node.left, key, value, checkValue);
             return node;
         } else if (cmp > 0) {
-            node.right = this.deleteNodeR(node.right, key);
+            node.right = this.deleteNodeR(node.right, key, value, checkValue);
+            return node;
+        }
+
+        if (checkValue && value.compareTo(node.val) != 0) {
             return node;
         }
 
@@ -202,11 +227,6 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         node.left = null;
         node.right = null;
         return newRoot;
-    }
-
-    @Override
-    public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
