@@ -1,5 +1,4 @@
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements Map61B<K, V> {
     private int size;
@@ -39,6 +38,61 @@ public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements
         this.root = this.insert(this.root, key, value);
     }
 
+    @Override
+    public void clear() {
+        this.root = null;
+        this.size = 0;
+    }
+
+    @Override
+    public int size() {
+        return this.size;
+    }
+
+    @Override
+    public Set<K> keySet() {
+        Set<K> keys = new HashSet<>();
+        this.inOrderTraversal(this.root, keys);
+        return keys;
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        //return new BSTMapIterator();
+        return this.keySet().iterator();
+    }
+
+    @Override
+    public V remove(K key) {
+        return this.removeHelper(key, null, false);
+    }
+
+    @Override
+    public V remove(K key, V value) {
+        return this.removeHelper(key, value, true);
+    }
+
+    /**
+     * Helper method to remove node
+     * @param key key to search
+     * @param value value to check
+     * @param checkValue whether the finding also need to match value
+     * @return removed node's value
+     */
+    private V removeHelper(K key, V value, boolean checkValue) {
+
+        this.removedNode = null;
+        //this.root = this.deleteNodeR(this.root, key, value, checkValue);
+        this.root = this.deleteNodeI(this.root, key, value, checkValue);
+
+        if (this.removedNode == null) {
+            return null;
+        } else {
+            this.size--;
+            return this.removedNode.val;
+        }
+    }
+
     /**
      * Recursive function to insert a key into BST
      * @param node root node of current tree
@@ -62,48 +116,6 @@ public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements
             node.right = this.insert(node.right, key, value);
         }
         return node;
-    }
-
-    @Override
-    public void clear() {
-        this.root = null;
-        this.size = 0;
-    }
-
-    @Override
-    public int size() {
-        return this.size;
-    }
-
-    @Override
-    public V remove(K key) {
-        return this.removeHelper(key, null, false);
-    }
-
-    @Override
-    public V remove(K key, V value) {
-        return this.removeHelper(key, value, true);
-    }
-
-    /**
-     * Helper method to remove node
-     * @param key
-     * @param value
-     * @param checkValue
-     * @return
-     */
-    private V removeHelper(K key, V value, boolean checkValue) {
-
-        this.removedNode = null;
-        //this.root = this.deleteNodeR(this.root, key, value, checkValue);
-        this.root = this.deleteNodeI(this.root, key, value, checkValue);
-
-        if (this.removedNode == null) {
-            return null;
-        } else {
-            this.size--;
-            return this.removedNode.val;
-        }
     }
 
     /**
@@ -229,14 +241,19 @@ public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements
         return newRoot;
     }
 
-    @Override
-    public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
-    }
+    /**
+     * Helper function to inorder traverse the given tree
+     * @param node input root
+     * @param output store the inorder traversed keys
+     */
+    private void inOrderTraversal(TreeNode node, Collection<K> output) {
+        if (node == null) {
+            return;
+        }
 
-    @Override
-    public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        this.inOrderTraversal(node.left, output);
+        output.add(node.key);
+        this.inOrderTraversal(node.right, output);
     }
 
     private class TreeNode {
@@ -248,6 +265,27 @@ public class BSTMap<K extends Comparable<K>, V extends Comparable<V>> implements
         TreeNode(K k, V v) {
             this.key = k;
             this.val = v;
+        }
+    }
+
+    private class BSTMapIterator implements Iterator<K> {
+        private ArrayList<K> keyList;
+        private int counter;
+
+        BSTMapIterator() {
+            this.counter = 0;
+            keyList = new ArrayList<>();
+            inOrderTraversal(root, keyList);
+        }
+
+        @Override
+        public K next() {
+            return keyList.get(counter++);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return counter < this.keyList.size();
         }
     }
 }
