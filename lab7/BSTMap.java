@@ -116,30 +116,15 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
         // find the node
         this.removedNode = curr;
+        TreeNode successor;
         if (curr.left == null) {
-            if (curr == rootNode) {
-                rootNode = curr.right;
-            } else {
-                if (parent.left == curr) {
-                    parent.left = curr.right;
-                } else {
-                    parent.right = curr.right;
-                }
-            }
+            successor = curr.right;
         } else if (curr.right == null) {
-            if (curr == rootNode) {
-                rootNode = curr.left;
-            } else {
-                if (parent.left == curr) {
-                    parent.left = curr.left;
-                } else {
-                    parent.right = curr.left;
-                }
-            }
+            successor = curr.left;
         } else {
             // node to be deleted has two children
             TreeNode successorParent = curr;
-            TreeNode successor = curr.right;
+            successor = curr.right;
             while (successor.left != null) {
                 successorParent = successor;
                 successor = successor.left;
@@ -152,17 +137,17 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
             }
             successor.left = curr.left;
             successor.right = curr.right;
-            if (curr == rootNode) {
-                rootNode = successor;
-            } else {
-                if (parent.left == curr) {
-                    parent.left = successor;
-                } else {
-                    parent.right = successor;
-                }
-            }
         }
 
+        if (curr == rootNode) {
+            rootNode = successor;
+        } else {
+            if (parent.left == curr) {
+                parent.left = successor;
+            } else {
+                parent.right = successor;
+            }
+        }
         curr.left = null;
         curr.right = null;
         return rootNode;
