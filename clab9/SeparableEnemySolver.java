@@ -23,10 +23,49 @@ public class SeparableEnemySolver {
      * Returns true if input is separable, false otherwise.
      */
     public boolean isSeparable() {
-        // TODO: Fix me
-        return false;
+        // This is a bipartite issue
+        if (this.g == null) {
+            throw new IllegalArgumentException("input is null");
+        }
+        // 0 means uncolored/visited
+        // 1 means marked as red
+        // 2 means marked as blue
+        Map<String, Integer> partitionMap = new HashMap<>();
+        Queue<String> bfsQueue = new ArrayDeque<>();
+
+        for (String label : this.g.labels()) {
+            partitionMap.put(label, 0);
+        }
+
+        for (String label : this.g.labels()) {
+            if (partitionMap.get(label) == 0) {
+                bfsQueue.add(label);
+                // if unvisited, put any color option
+                partitionMap.put(label, 1);
+                while (!bfsQueue.isEmpty()) {
+                    String curNode = bfsQueue.poll();
+                    int currentColor = partitionMap.get(curNode);
+                    for (String neighbor : this.g.neighbors(curNode)) {
+                        if (partitionMap.get(neighbor) == 0) {
+                            bfsQueue.add(neighbor);
+                            partitionMap.put(neighbor, this.getDifferentColor(currentColor));
+                        } else if (currentColor == partitionMap.get(neighbor)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
+    private int getDifferentColor(int i) {
+        if (i == 1) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
 
     /* HELPERS FOR READING IN CSV FILES. */
 
