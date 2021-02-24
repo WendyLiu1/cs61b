@@ -28,11 +28,11 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         int curIdx = this.size();
         this.itemMap.put(item, curIdx);
         while (curIdx > 1) {
-            Integer swapped = this.swimUP(curIdx);
-            if (swapped == null) {
+            int newPos = this.floatUp(curIdx);
+            if (newPos == curIdx) {
                 break;
             } else {
-                curIdx = swapped;
+                curIdx = newPos;
             }
         }
     }
@@ -60,16 +60,16 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         int lastIdx = this.size();
         this.swap(smallest, this.heap.get(lastIdx).item, curIdx, lastIdx);
         this.itemMap.remove(smallest);
-        //ArrayList has O (n) time complexity for arbitrary indices of add/remove,
+        // ArrayList has O (n) time complexity for arbitrary indices of add/remove,
         // but O (1) for the operation at the end of the list. 0.
         // arraylist remove last element time complexity
         this.heap.remove(this.size());
         while (curIdx < this.size()) {
-            Integer swapped = this.sinkDown(curIdx);
-            if (swapped == null) {
+            int newPos = this.sinkDown(curIdx);
+            if (newPos == curIdx) {
                 break;
             } else {
-                curIdx = swapped;
+                curIdx = newPos;
             }
         }
 
@@ -77,68 +77,79 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
     }
 
     /**
-     * Swap the current node and the parent node, also reset the hashmap idx
-     * @param idx
+     * Float up operation for given index, return the new position
+     * @param idx current index
+     * @return new position in the heap
      */
-    private Integer swimUP(int idx) {
+    private int floatUp(int idx) {
         if (idx == 1) {
-            return null;
+            return idx;
         }
-        int parentIdx = this.getParent(idx);
+        int parentIdx = this.getParentIdx(idx);
         PriorityNode parent = this.heap.get(parentIdx);
         PriorityNode current = this.heap.get(idx);
         if (current.compareTo(parent) < 0) {
             this.swap(current.item, parent.item, idx, parentIdx);
             return parentIdx;
         }
-        return null;
+        return idx;
     }
 
-    private Integer sinkDown(int idx) {
+    /**
+     * Sink operation for given idx, if the minimal between current
+     * idx and its children is itself, we stop the operation
+     * @param idx current index
+     * @return new position in the heap
+     */
+    private int sinkDown(int idx) {
         // If it is the last level, no need to swap
         int level = (int) (Math.log(this.size()) / Math.log(2));
         int lastLevelFirstIdx = (int) Math.pow(2, level);
         if (idx >= lastLevelFirstIdx) {
-            return null;
+            return idx;
         }
         PriorityNode currentNode = this.heap.get(idx);
-        PriorityNode rightChild = null;
-        PriorityNode leftChild = null;
-        int rightChildIdx = this.getRightChild(idx);
-        int leftChildIdx = this.getLeftChild(idx);
-
-        if (rightChildIdx < this.heap.size()) {
-            rightChild = this.heap.get(rightChildIdx);
-        }
-
-        if (leftChildIdx < this.heap.size()) {
-            leftChild = this.heap.get(leftChildIdx);
-        }
-
-        if (leftChild == null) {
-            return null;
-        }
-
-        // No right child or right child is larger than left, then we only compare left
-        if (rightChild == null || leftChild.compareTo(rightChild) < 0) {
-            if (leftChild.compareTo(currentNode) < 0) {
-                this.swap(currentNode.item, leftChild.item, idx, leftChildIdx);
-                return leftChildIdx;
-            } else {
-                return null;
-            }
+        int minOfAll = this.findMinIdx(idx);
+        if (minOfAll == idx) {
+            return idx;
         } else {
-            // right <= left
-            if (rightChild.compareTo(currentNode) < 0) {
-                this.swap(currentNode.item, rightChild.item, idx, rightChildIdx);
-                return rightChildIdx;
-            } else {
-                return null;
-            }
+            this.swap(currentNode.item, this.heap.get(minOfAll).item, idx, minOfAll);
+            return minOfAll;
         }
     }
 
+    /**
+     * Find the minimal between current and it's children
+     * @param idx current index
+     * @return smallest index
+     */
+    private int findMinIdx(int idx) {
+        int minIdx = idx;
+        PriorityNode curNode = this.heap.get(idx);
+        int leftIdx = this.getLeftChildIdx(idx);
+        int rightIdx = this.getRightChildIdx(idx);
+
+        if (leftIdx <= this.size() && this.heap.get(leftIdx).compareTo(this.heap.get(minIdx)) < 0) {
+            minIdx = leftIdx;
+        }
+
+        if (rightIdx <= this.size() && this.heap.get(rightIdx).compareTo(this.heap.get(minIdx)) < 0) {
+            minIdx = rightIdx;
+        }
+
+        return  minIdx;
+    }
+
+    /**
+     * Swap the item in the heap also update location info in hashmap
+     * @param item1 item 1 in the hashmap
+     * @param item2 item 2 in the hashmap
+     * @param idx1 idx for item1
+     * @param idx2 idx for item2
+     */
     private void swap(T item1, T item2, int idx1, int idx2) {
+        //TODO: Maybe update function signature so we dont need idx1 and idx2
+        // since they can be get from hashmap
         Collections.swap(this.heap, idx1, idx2);
         this.itemMap.put(item2, idx1);
         this.itemMap.put(item1, idx2);
@@ -161,34 +172,49 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         if (prevP < priority) {
             while (nodeIdx < this.size()) {
                 // New priority is larger
-                Integer swapped = this.sinkDown(nodeIdx);
-                if (swapped == null) {
+                int newPos = this.sinkDown(nodeIdx);
+                if (newPos == nodeIdx) {
                     break;
                 } else {
-                    nodeIdx = swapped;
+                    nodeIdx = newPos;
                 }
             }
         } else if (prevP > priority) {
             while (nodeIdx > 1) {
-                Integer swapped = this.swimUP(nodeIdx);
-                if (swapped == null) {
+                int newPos = this.floatUp(nodeIdx);
+                if (newPos == nodeIdx) {
                     break;
                 } else {
-                    nodeIdx = swapped;
+                    nodeIdx = newPos;
                 }
             }
         }
     }
 
-    private int getParent(int idx) {
+    /**
+     * Get parent index
+     * @param idx current index
+     * @return parent index of current index in the heap
+     */
+    private int getParentIdx(int idx) {
         return idx / 2;
     }
 
-    private int getLeftChild(int idx) {
+    /**
+     * Get left child index
+     * @param idx current index
+     * @return left child index in the heap
+     */
+    private int getLeftChildIdx(int idx) {
         return 2 * idx;
     }
 
-    private int getRightChild(int idx) {
+    /**
+     * Get right child index
+     * @param idx current index
+     * @return right child index in the heap
+     */
+    private int getRightChildIdx(int idx) {
         return 2 * idx + 1;
     }
 
