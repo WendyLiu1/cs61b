@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.HashSet;
 import bearmaps.proj2ab.ArrayHeapMinPQ;
 import bearmaps.proj2ab.ExtrinsicMinPQ;
@@ -35,7 +34,7 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
         this.dequeueOperation = 0;
 
         ExtrinsicMinPQ<Vertex> pq = new ArrayHeapMinPQ<>();
-        // Current shortest distance to source
+        // Current shortest distance to source for given vertex
         Map<Vertex, Double> distTo = new HashMap<>();
         // Previous node in temporary shortest path
         Map<Vertex, Vertex> edgeTo = new HashMap<>();
@@ -62,33 +61,33 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
                 break;
             }
 
-            Vertex current = pq.removeSmallest();
+            Vertex v = pq.removeSmallest();
             this.dequeueOperation++;
-            visited.add(current);
+            visited.add(v);
 
-            double curDistToSource = distTo.get(current);
-            for (WeightedEdge<Vertex> e : input.neighbors(current)) {
-                Vertex to = e.to();
+            double curBestDistToV = distTo.get(v);
+            for (WeightedEdge<Vertex> e : input.neighbors(v)) {
+                Vertex w = e.to();
 
                 // This is necessary to make sure we dont re-add
                 // visited node to pq
-                if (visited.contains(to)) {
+                if (visited.contains(w)) {
                     continue;
                 }
 
                 double weight = e.weight();
-                double newDist = curDistToSource + weight;
-                if (pq.contains(to)) {
-                    double endDistToSource = distTo.get(to);
-                    if (newDist < endDistToSource) {
-                        distTo.put(to, newDist);
-                        edgeTo.put(to, current);
-                        pq.changePriority(to, newDist + input.estimatedDistanceToGoal(to, end));
+                double potentialDistToTUsingCurrent = curBestDistToV + weight;
+                if (pq.contains(w)) {
+                    double curBestDistToW = distTo.get(w);
+                    if (potentialDistToTUsingCurrent < curBestDistToW) {
+                        distTo.put(w, potentialDistToTUsingCurrent);
+                        edgeTo.put(w, v);
+                        pq.changePriority(w, potentialDistToTUsingCurrent + input.estimatedDistanceToGoal(w, end));
                     }
                 } else {
-                    distTo.put(to, newDist);
-                    edgeTo.put(to, current);
-                    pq.add(to, newDist + input.estimatedDistanceToGoal(to, end));
+                    distTo.put(w, potentialDistToTUsingCurrent);
+                    edgeTo.put(w, v);
+                    pq.add(w, potentialDistToTUsingCurrent + input.estimatedDistanceToGoal(w, end));
                 }
             }
         }
