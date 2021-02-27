@@ -71,6 +71,7 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
 
                 // This is necessary to make sure we dont re-add
                 // visited node to pq
+                // i.e never relax edges that point to already visited vertices
                 if (visited.contains(w)) {
                     continue;
                 }
@@ -78,8 +79,8 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
                 double weight = e.weight();
                 double potentialDistToWUsingV = curBestDistToV + weight;
                 if (pq.contains(w)) {
-                    double curBestDistToW = distTo.get(w);
-                    if (potentialDistToWUsingV < curBestDistToW) {
+                    double curBestKnowDistToW = distTo.get(w);
+                    if (potentialDistToWUsingV < curBestKnowDistToW) {
                         distTo.put(w, potentialDistToWUsingV);
                         edgeTo.put(w, v);
                         pq.changePriority(w, potentialDistToWUsingV + input.estimatedDistanceToGoal(w, end));
