@@ -34,9 +34,9 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
         this.dequeueOperation = 0;
 
         ExtrinsicMinPQ<Vertex> pq = new ArrayHeapMinPQ<>();
-        // Current shortest distance to source for given vertex
+        // Best known total distance from source to given vertex
         Map<Vertex, Double> distTo = new HashMap<>();
-        // Previous node in temporary shortest path
+        // Best known predecessor of vertical
         Map<Vertex, Vertex> edgeTo = new HashMap<>();
         HashSet<Vertex> visited = new HashSet<>();
 
@@ -79,8 +79,8 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
                 double weight = e.weight();
                 double potentialDistToWUsingV = curBestDistToV + weight;
                 if (pq.contains(w)) {
-                    double curBestKnowDistToW = distTo.get(w);
-                    if (potentialDistToWUsingV < curBestKnowDistToW) {
+                    double curBestKnownDistToW = distTo.get(w);
+                    if (potentialDistToWUsingV < curBestKnownDistToW) {
                         distTo.put(w, potentialDistToWUsingV);
                         edgeTo.put(w, v);
                         pq.changePriority(w, potentialDistToWUsingV + input.estimatedDistanceToGoal(w, end));
