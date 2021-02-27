@@ -14,12 +14,27 @@ public class WeightedEdge<Vertex> {
         this.w = w;
         this.weight = weight;
     }
+
+    /**
+     * The source of this edge.
+     * @return
+     */
     public Vertex from() {
         return v;
     }
+
+    /**
+     * The destination of this edge
+     * @return
+     */
     public Vertex to() {
         return w;
     }
+
+    /**
+     * The weight of this edge.
+     * @return
+     */
     public double weight() {
         return weight;
     }
