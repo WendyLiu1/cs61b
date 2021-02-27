@@ -76,18 +76,18 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
                 }
 
                 double weight = e.weight();
-                double potentialDistToTUsingCurrent = curBestDistToV + weight;
+                double potentialDistToWUsingV = curBestDistToV + weight;
                 if (pq.contains(w)) {
                     double curBestDistToW = distTo.get(w);
-                    if (potentialDistToTUsingCurrent < curBestDistToW) {
-                        distTo.put(w, potentialDistToTUsingCurrent);
+                    if (potentialDistToWUsingV < curBestDistToW) {
+                        distTo.put(w, potentialDistToWUsingV);
                         edgeTo.put(w, v);
-                        pq.changePriority(w, potentialDistToTUsingCurrent + input.estimatedDistanceToGoal(w, end));
+                        pq.changePriority(w, potentialDistToWUsingV + input.estimatedDistanceToGoal(w, end));
                     }
                 } else {
-                    distTo.put(w, potentialDistToTUsingCurrent);
+                    distTo.put(w, potentialDistToWUsingV);
                     edgeTo.put(w, v);
-                    pq.add(w, potentialDistToTUsingCurrent + input.estimatedDistanceToGoal(w, end));
+                    pq.add(w, potentialDistToWUsingV + input.estimatedDistanceToGoal(w, end));
                 }
             }
         }
