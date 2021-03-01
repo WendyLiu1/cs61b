@@ -1,17 +1,48 @@
 import edu.princeton.cs.algs4.Queue;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Random;
 
 public class TestSortAlgs {
 
     @Test
     public void testQuickSort() {
-
+        Queue<Integer> q = this.generateRandomQueue(100);
+        Queue<Integer> sortedQ = QuickSort.quickSort(q);
+        int prev = sortedQ.dequeue();
+        while (!sortedQ.isEmpty()) {
+            int cur = sortedQ.dequeue();
+            assertTrue(cur > prev);
+            prev = cur;
+        }
     }
 
     @Test
     public void testMergeSort() {
+        Queue<Integer> q = this.generateRandomQueue(100);
+        Queue<Integer> sortedQ = MergeSort.mergeSort(q);
+        int prev = sortedQ.dequeue();
+        while (!sortedQ.isEmpty()) {
+            int cur = sortedQ.dequeue();
+            assertTrue(cur > prev);
+            prev = cur;
+        }
+    }
 
+    /**
+     * Generate a random queue, the size is based on input n
+     * @param n
+     * @return
+     */
+    private Queue<Integer> generateRandomQueue(int n) {
+        Random random = new Random();
+        Queue<Integer> q = new Queue<>();
+        for (int i = 0; i < n; i++) {
+            q.enqueue(random.nextInt());
+        }
+        return q;
     }
 
     /**
