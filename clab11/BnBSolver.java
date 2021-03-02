@@ -33,32 +33,13 @@ public class BnBSolver {
         List<Bear> less = new ArrayList<>();
         List<Bear> equal = new ArrayList<>();
         List<Bear> greater = new ArrayList<>();
-        BnBSolver.partitionBear(unsortedBearList, pivot, less, equal, greater);
+        BnBSolver.partition(unsortedBearList, pivot, less, equal, greater);
 
         less = this.sortBearsBasedOnBed(less, bedIdx + 1);
         greater = this.sortBearsBasedOnBed(greater, bedIdx + 1);
-        List<Bear> result = new ArrayList<>();
-        result.addAll(less);
-        result.addAll(equal);
-        result.addAll(greater);
+        List<Bear> result = this.concatenate(less, equal, greater);
         return result;
     }
-
-    private static void partitionBear(
-         List<Bear> unsorted, Bed pivot,
-         List<Bear> less, List<Bear> equal, List<Bear> greater
-    ) {
-        for (Bear bear : unsorted) {
-            if (bear.compareTo(pivot) == 0) {
-                equal.add(bear);
-            } else if (bear.compareTo(pivot) < 0) {
-                less.add(bear);
-            } else {
-                greater.add(bear);
-            }
-        }
-    }
-
 
     /**
      * Returns List of Beds such that the ith Bear is the same size as the ith Bear of solvedBears().
@@ -75,29 +56,34 @@ public class BnBSolver {
         List<Bed> less = new ArrayList<>();
         List<Bed> equal = new ArrayList<>();
         List<Bed> greater = new ArrayList<>();
-        this.partitionBed(unsorted, pivot, less, equal, greater);
+        this.partition(unsorted, pivot, less, equal, greater);
 
         less = this.sortBedBasedOnBear(less, bearIdx + 1);
         greater = this.sortBedBasedOnBear(greater, bearIdx + 1);
 
-        List<Bed> result = new ArrayList<>();
-        result.addAll(less);
-        result.addAll(equal);
-        result.addAll(greater);
+        List<Bed> result = this.concatenate(less, equal, greater);
         return result;
     }
 
-    private void partitionBed(List<Bed> unsorted, Bear bear, List<Bed> less,
-                         List<Bed> equal, List<Bed> greater) {
-        for (Bed bed : unsorted) {
-            if (bed.compareTo(bear) == 0) {
-                equal.add(bed);
-            } else if (bed.compareTo(bear) < 0) {
-                less.add(bed);
+    private static <P extends Comparable<Q>, Q extends Comparable<P>> void partition(
+            List<P> unsorted, Q pivot,
+            List<P> less, List<P> equal, List<P> greater
+    ) {
+        for (P item : unsorted) {
+            if (item.compareTo(pivot) == 0) {
+                equal.add(item);
+            } else if (item.compareTo(pivot) < 0) {
+                less.add(item);
             } else {
-                greater.add(bed);
+                greater.add(item);
             }
         }
     }
 
+    private <P> List<P> concatenate(List<P> l1, List<P> l2, List<P> l3) {
+        List<P> newList = new ArrayList<>(l1);
+        newList.addAll(l2);
+        newList.addAll(l3);
+        return newList;
+    }
 }
