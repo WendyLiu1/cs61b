@@ -22,48 +22,39 @@ public class BnBSolver {
      * Returns List of Bears such that the ith Bear is the same size as the ith Bed of solvedBeds().
      */
     public List<Bear> solvedBears() {
-        return this.sortBearsBasedOnBed(this.bearSortList, 0);
-    }
-
-    private List<Bear> sortBearsBasedOnBed(List<Bear> unsortedBearList, int bedIdx) {
-        if (unsortedBearList == null || unsortedBearList.size() < 2 || bedIdx == this.bedSortList.size()) {
-            return unsortedBearList;
-        }
-        Bed pivot = this.bedSortList.get(bedIdx);
-        List<Bear> less = new ArrayList<>();
-        List<Bear> equal = new ArrayList<>();
-        List<Bear> greater = new ArrayList<>();
-        BnBSolver.partition(unsortedBearList, pivot, less, equal, greater);
-
-        less = this.sortBearsBasedOnBed(less, bedIdx + 1);
-        greater = this.sortBearsBasedOnBed(greater, bedIdx + 1);
-        List<Bear> result = this.concatenate(less, equal, greater);
-        return result;
+        return BnBSolver.quickSort(this.bearSortList, 0, this.bedSortList);
     }
 
     /**
      * Returns List of Beds such that the ith Bear is the same size as the ith Bear of solvedBears().
      */
     public List<Bed> solvedBeds() {
-        return this.sortBedBasedOnBear(this.bedSortList, 0);
+        return BnBSolver.quickSort(this.bedSortList, 0, this.bearSortList);
     }
 
-    private List<Bed> sortBedBasedOnBear(List<Bed> unsorted, int bearIdx) {
-        if (unsorted == null || unsorted.size() < 2 || bearIdx == this.bearSortList.size()) {
+    private static <P extends Comparable<Q>, Q extends Comparable<P>> List<P> quickSort(
+            List<P> unsorted, int compareIdx, List<Q> compareList
+    ) {
+        if (unsorted == null) {
+            throw new IllegalArgumentException();
+        }
+        if (unsorted.size() < 2 || compareIdx == compareList.size()) {
             return unsorted;
         }
-        Bear pivot = this.bearSortList.get(bearIdx);
-        List<Bed> less = new ArrayList<>();
-        List<Bed> equal = new ArrayList<>();
-        List<Bed> greater = new ArrayList<>();
-        this.partition(unsorted, pivot, less, equal, greater);
+        Q pivot = compareList.get(compareIdx);
+        List<P> less = new ArrayList<>();
+        List<P> equal = new ArrayList<>();
+        List<P> greater = new ArrayList<>();
 
-        less = this.sortBedBasedOnBear(less, bearIdx + 1);
-        greater = this.sortBedBasedOnBear(greater, bearIdx + 1);
+        BnBSolver.partition(unsorted, pivot, less, equal, greater);
 
-        List<Bed> result = this.concatenate(less, equal, greater);
+        List<P> lessSorted = BnBSolver.quickSort(less, compareIdx + 1, compareList);
+        List<P> greaterSorted = BnBSolver.quickSort(greater, compareIdx + 1, compareList);
+
+        List<P> result = BnBSolver.concatenate(lessSorted, equal, greaterSorted);
         return result;
     }
+
 
     private static <P extends Comparable<Q>, Q extends Comparable<P>> void partition(
             List<P> unsorted, Q pivot,
@@ -80,7 +71,7 @@ public class BnBSolver {
         }
     }
 
-    private <P> List<P> concatenate(List<P> l1, List<P> l2, List<P> l3) {
+    private static <P> List<P> concatenate(List<P> l1, List<P> l2, List<P> l3) {
         List<P> newList = new ArrayList<>(l1);
         newList.addAll(l2);
         newList.addAll(l3);
