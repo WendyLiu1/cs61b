@@ -10,23 +10,94 @@ import java.util.List;
  */
 public class BnBSolver {
 
+    private List<Bear> bearSortList;
+    private List<Bed> bedSortList;
+
     public BnBSolver(List<Bear> bears, List<Bed> beds) {
-        // TODO: Fix me.
+        this.bearSortList = new ArrayList<>(bears);
+        this.bedSortList = new ArrayList<>(beds);
     }
 
     /**
      * Returns List of Bears such that the ith Bear is the same size as the ith Bed of solvedBeds().
      */
     public List<Bear> solvedBears() {
-        // TODO: Fix me.
-        return null;
+        return this.sortBearsBasedOnBed(this.bearSortList, 0);
     }
+
+    private List<Bear> sortBearsBasedOnBed(List<Bear> unsortedBearList, int bedIdx) {
+        if (unsortedBearList == null || unsortedBearList.size() < 2 || bedIdx == this.bedSortList.size()) {
+            return unsortedBearList;
+        }
+        Bed pivot = this.bedSortList.get(bedIdx);
+        List<Bear> less = new ArrayList<>();
+        List<Bear> equal = new ArrayList<>();
+        List<Bear> greater = new ArrayList<>();
+        BnBSolver.partitionBear(unsortedBearList, pivot, less, equal, greater);
+
+        less = this.sortBearsBasedOnBed(less, bedIdx + 1);
+        greater = this.sortBearsBasedOnBed(greater, bedIdx + 1);
+        List<Bear> result = new ArrayList<>();
+        result.addAll(less);
+        result.addAll(equal);
+        result.addAll(greater);
+        return result;
+    }
+
+    private static void partitionBear(
+         List<Bear> unsorted, Bed pivot,
+         List<Bear> less, List<Bear> equal, List<Bear> greater
+    ) {
+        for (Bear bear : unsorted) {
+            if (bear.compareTo(pivot) == 0) {
+                equal.add(bear);
+            } else if (bear.compareTo(pivot) < 0) {
+                less.add(bear);
+            } else {
+                greater.add(bear);
+            }
+        }
+    }
+
 
     /**
      * Returns List of Beds such that the ith Bear is the same size as the ith Bear of solvedBears().
      */
     public List<Bed> solvedBeds() {
-        // TODO: Fix me.
-        return null;
+        return this.sortBedBasedOnBear(this.bedSortList, 0);
     }
+
+    private List<Bed> sortBedBasedOnBear(List<Bed> unsorted, int bearIdx) {
+        if (unsorted == null || unsorted.size() < 2 || bearIdx == this.bearSortList.size()) {
+            return unsorted;
+        }
+        Bear pivot = this.bearSortList.get(bearIdx);
+        List<Bed> less = new ArrayList<>();
+        List<Bed> equal = new ArrayList<>();
+        List<Bed> greater = new ArrayList<>();
+        this.partitionBed(unsorted, pivot, less, equal, greater);
+
+        less = this.sortBedBasedOnBear(less, bearIdx + 1);
+        greater = this.sortBedBasedOnBear(greater, bearIdx + 1);
+
+        List<Bed> result = new ArrayList<>();
+        result.addAll(less);
+        result.addAll(equal);
+        result.addAll(greater);
+        return result;
+    }
+
+    private void partitionBed(List<Bed> unsorted, Bear bear, List<Bed> less,
+                         List<Bed> equal, List<Bed> greater) {
+        for (Bed bed : unsorted) {
+            if (bed.compareTo(bear) == 0) {
+                equal.add(bed);
+            } else if (bed.compareTo(bear) < 0) {
+                less.add(bed);
+            } else {
+                greater.add(bed);
+            }
+        }
+    }
+
 }
