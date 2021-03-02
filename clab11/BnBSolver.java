@@ -51,8 +51,7 @@ public class BnBSolver {
         List<P> lessSorted = BnBSolver.quickSort(less, compareIdx + 1, compareList);
         List<P> greaterSorted = BnBSolver.quickSort(greater, compareIdx + 1, compareList);
 
-        List<P> result = BnBSolver.concatenate(lessSorted, equal, greaterSorted);
-        return result;
+        return BnBSolver.concatenate(lessSorted, equal, greaterSorted);
     }
 
 
