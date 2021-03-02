@@ -10,28 +10,40 @@ import java.util.List;
  */
 public class BnBSolver {
 
-    private List<Bear> bearSortList;
-    private List<Bed> bedSortList;
+    private final List<Bear> sortedBearList;
+    private final List<Bed> sortedBedList;
 
     public BnBSolver(List<Bear> bears, List<Bed> beds) {
-        this.bearSortList = new ArrayList<>(bears);
-        this.bedSortList = new ArrayList<>(beds);
+        if (bears == null || beds == null || beds.size() != bears.size()) {
+            throw new IllegalArgumentException("input is invalid");
+        }
+        this.sortedBearList = BnBSolver.quickSort(bears, 0, beds);
+        this.sortedBedList = BnBSolver.quickSort(beds, 0, bears);
     }
 
     /**
      * Returns List of Bears such that the ith Bear is the same size as the ith Bed of solvedBeds().
      */
     public List<Bear> solvedBears() {
-        return BnBSolver.quickSort(this.bearSortList, 0, this.bedSortList);
+        return this.sortedBearList;
     }
 
     /**
      * Returns List of Beds such that the ith Bear is the same size as the ith Bear of solvedBears().
      */
     public List<Bed> solvedBeds() {
-        return BnBSolver.quickSort(this.bedSortList, 0, this.bearSortList);
+        return this.sortedBedList;
     }
 
+    /**
+     * Sort P based on Q
+     * @param unsorted
+     * @param compareIdx
+     * @param compareList
+     * @param <P>
+     * @param <Q>
+     * @return
+     */
     private static <P extends Comparable<Q>, Q extends Comparable<P>> List<P> quickSort(
             List<P> unsorted, int compareIdx, List<Q> compareList
     ) {
