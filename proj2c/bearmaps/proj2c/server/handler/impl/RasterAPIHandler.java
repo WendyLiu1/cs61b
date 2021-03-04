@@ -1,7 +1,5 @@
 package bearmaps.proj2c.server.handler.impl;
 
-import bearmaps.proj2ab.KdTree;
-import bearmaps.proj2ab.Point;
 import bearmaps.proj2c.AugmentedStreetMapGraph;
 import bearmaps.proj2c.server.handler.APIRouteHandler;
 import spark.Request;
@@ -89,30 +87,33 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         double lrLon = requestParams.get("lrlon");
         double lrLat = requestParams.get("lrlat");
         double width = requestParams.get("w");
-        double height = requestParams.get("h");
-        if (!validInput(ulLon, ulLat, lrLon, lrLat, width, height)) {
+        if (!validInput(ulLon, ulLat, lrLon, lrLat)) {
             results = queryFail();
             return results;
         }
         int depth = RasterAPIHandler.getDepth(lrLon, ulLon, width);
-        Map<Point, Integer> centerPointMap = new HashMap<>();
-        KdTree depthKdTree = RasterAPIHandler.generateCenterKdTree(depth, centerPointMap);
-        int nearestULTileSequence = RasterAPIHandler.findNearestTile(ulLon, ulLat, depthKdTree, depth, centerPointMap);
-        int nearestLRTileSequence = RasterAPIHandler.findNearestTile(lrLon, lrLat, depthKdTree, depth, centerPointMap);
-        String[][] files = RasterAPIHandler.getFileSequences(nearestULTileSequence, nearestLRTileSequence, depth);
-        int startX = RasterAPIHandler.getXSequence(nearestULTileSequence, depth);
-        int startY = RasterAPIHandler.getYSequence(nearestULTileSequence, depth);
-        int endX = RasterAPIHandler.getXSequence(nearestLRTileSequence, depth);
-        int endY = RasterAPIHandler.getYSequence(nearestLRTileSequence, depth);
-        Point ul = RasterAPIHandler.getGeoPoint(startX * TILE_SIZE, startY * TILE_SIZE, depth);
-        Point lr = RasterAPIHandler.getGeoPoint((endX + 1) * TILE_SIZE, (endY + 1) * TILE_SIZE, depth);
+        int numOfGridPixelsPerDirection = (int) Math.pow(2, depth);
+        int startX = (int) ((ulLon - ROOT_ULLON) / (ROOT_LRLON - ROOT_ULLON) * numOfGridPixelsPerDirection);
+        int endX = (int) Math.ceil((lrLon - ROOT_ULLON) / (ROOT_LRLON - ROOT_ULLON) * numOfGridPixelsPerDirection) - 1;
+        int startY = (int) ((ROOT_ULLAT - ulLat) / (ROOT_ULLAT - ROOT_LRLAT) * numOfGridPixelsPerDirection);
+        int endY= (int) Math.ceil((ROOT_ULLAT - lrLat) / (ROOT_ULLAT - ROOT_LRLAT) * numOfGridPixelsPerDirection) - 1;
+        // Bound checking
+        startX = RasterAPIHandler.boundCheck(startX, 0, numOfGridPixelsPerDirection -1);
+        startY = RasterAPIHandler.boundCheck(startY, 0, numOfGridPixelsPerDirection -1);
+        endX = RasterAPIHandler.boundCheck(endX, 0, numOfGridPixelsPerDirection -1);
+        endY = RasterAPIHandler.boundCheck(endY, 0, numOfGridPixelsPerDirection -1);
+        // Deal with 1-D query: when query box degrades to a line or even a single point,
+        // we may get xFirst > xLast, xFirst == numOfTiles, etc. above)
+        endX = Math.max(startX, endX);
+        endY = Math.max(startY, endY);
+        String[][] files = RasterAPIHandler.getFileSequences(startX, startY, endX, endY, depth);
         results.put("depth", depth);
         results.put("render_grid", files);
         results.put("query_success", true);
-        results.put("raster_ul_lon", ul.getX());
-        results.put("raster_ul_lat", ul.getY());
-        results.put("raster_lr_lon", lr.getX());
-        results.put("raster_lr_lat", lr.getY());
+        results.put("raster_ul_lon", RasterAPIHandler.getLongitude(startX, numOfGridPixelsPerDirection));
+        results.put("raster_ul_lat", RasterAPIHandler.getLatitude(startY, numOfGridPixelsPerDirection));
+        results.put("raster_lr_lon", RasterAPIHandler.getLongitude(endX + 1, numOfGridPixelsPerDirection));
+        results.put("raster_lr_lat", RasterAPIHandler.getLatitude(endY + 1, numOfGridPixelsPerDirection));
         return results;
     }
 
@@ -125,65 +126,24 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     private static int getDepth(double lrLon, double ulLon, double width) {
         double requestedLonDPP = RasterAPIHandler.getLongitudinalDistancePerPixel(lrLon, ulLon, width);
-        double[] depthLonDPP = new double[8];
-
-        for (int i = 0; i < 8; i++) {
-            depthLonDPP[i] = RasterAPIHandler.getLongitudinalDistancePerPixel(
-                    ROOT_LRLON, ROOT_ULLON, TILE_SIZE * Math.pow(2, i));
-        }
-
-        // Use binary search to find the closest LonDPP
-        return RasterAPIHandler.findNearestSmallerIndex(depthLonDPP, requestedLonDPP);
+        int depth = (int) Math.ceil(Math.log((ROOT_LRLON - ROOT_ULLON) / TILE_SIZE / requestedLonDPP) / Math.log(2));
+        depth = RasterAPIHandler.boundCheck(depth, 0, 7);
+        return depth;
     }
 
     /**
-     * Find the index of the largest value that is smaller than target,
-     * if not find, return the last index
-     * @param input input is in descending order
-     * @param target target value
-     * @return index of such element
+     * Make sure the input is within bound
+     * @param input input value
+     * @param lowerBound lower bound
+     * @param upperBound upper bound
+     * @return input if within bound
      */
-    private static int findNearestSmallerIndex(double[] input, double target) {
-        int left = 0;
-        int right = input.length - 1;
-        while (left < right) {
-            int mid = (right - left) / 2 + left;
-            if (input[mid] > target) {
-                left = mid + 1;
-            } else if (input[mid] < target) {
-                right = mid;
-            } else {
-                left = mid;
-                break;
-            }
-        }
-        return left;
+    private static int boundCheck(int input, int lowerBound, int upperBound) {
+        return Math.min(upperBound, Math.max(input, lowerBound));
     }
 
     /**
-     * Build a KdTree based on depth, each point is the center coordinate of the image
-     * @param depth depth of the view
-     * @param centerPointMap point -> image file sequence
-     * @return new KdTree containing 2 ^ 2k points
-     */
-    private static KdTree generateCenterKdTree(int depth, Map<Point, Integer> centerPointMap) {
-        List<Point> centerPoints = new ArrayList<>();
-        int numOfImagesPerDirection = (int) Math.pow(2, depth);
-        int gridCenterCompensate = TILE_SIZE / 2;
-        for (int y = 0; y < numOfImagesPerDirection; y++) {
-            for (int x = 0; x < numOfImagesPerDirection; x++) {
-                Point center = RasterAPIHandler.getGeoPoint(x * TILE_SIZE + gridCenterCompensate,
-                        y * TILE_SIZE + gridCenterCompensate, depth);
-                centerPoints.add(center);
-                centerPointMap.put(center, RasterAPIHandler.getFileSequence(x, y, depth));
-            }
-        }
-        KdTree kdTree = new KdTree(centerPoints);
-        return kdTree;
-    }
-
-    /**
-     * Convert the
+     * Convert the target grid position to geo position
      * @param geoPos1 position 1's geo coordinate(latitude/longitude)
      * @param gridPos1 position 1's grid coordinate(latitude/longitude)
      * @param geoPos2 position 2's geo coordinate(latitude/longitude)
@@ -200,52 +160,38 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
     }
 
     /**
-     * Get the geo coordinate for x, y
-     * @param x x grid coordinate
-     * @param y y grid coordinate
-     * @param depth depth of the view
-     * @return geo center point
+     * Get the longitude based on x
+     * @param x x is relative to depth and files, top left corner is the original point
+     * @param xEnd xEnd is 2 ^ depth
+     * @return x's longtitude
      */
-    private static Point getGeoPoint(int x, int y, int depth){
-        double edgeGridCoordinate = TILE_SIZE * Math.pow(2, depth);
-        double geoX = RasterAPIHandler.convertGridCoordinateToGeoCoordinate(
-                ROOT_ULLON, 0, ROOT_LRLON, edgeGridCoordinate,
-                x
-        );
-        double geoY = RasterAPIHandler.convertGridCoordinateToGeoCoordinate(
-                ROOT_ULLAT, 0, ROOT_LRLAT, edgeGridCoordinate,
-                y
-        );
-        return new Point(geoX, geoY);
+    private static double getLongitude(double x, int xEnd) {
+        return RasterAPIHandler.convertGridCoordinateToGeoCoordinate(ROOT_ULLON, 0,
+                ROOT_LRLON, xEnd, x);
     }
 
     /**
-     * Find which tile this point belongs to
-     * @param lon longitude of the point
-     * @param lat latitude of the point
-     * @param kdTree kdTree of the center points
-     * @param depth depth of the view
-     * @param centerPointMap center point -> file sequence
-     * @return file sequence
+     * Get the latitude based on y
+     * @param y is relative to depth and files, top left corner is the original point
+     * @param yEnd xEnd is 2 ^ depth
+     * @return y's latitude
      */
-    private static int findNearestTile(double lon, double lat, KdTree kdTree, int depth,
-                                       Map<Point, Integer> centerPointMap) {
-        Point nearest = kdTree.nearest(lon, lat);
-        return centerPointMap.get(nearest);
+    private static double getLatitude(double y, int yEnd) {
+        return RasterAPIHandler.convertGridCoordinateToGeoCoordinate(ROOT_ULLAT, 0,
+                ROOT_LRLAT, yEnd, y);
     }
 
     /**
-     *
-     * @param ulSequence
-     * @param lrSequence
-     * @param depth
-     * @return
+     * Generate string representation of required image files
+     * @param startX x start sequence
+     * @param startY y start sequence
+     * @param endX x end sequence
+     * @param endY y end sequence
+     * @param depth depth of the view
+     * @return string representation of required image file
      */
-    private static String[][] getFileSequences(int ulSequence, int lrSequence, int depth) {
-        int startX = RasterAPIHandler.getXSequence(ulSequence, depth);
-        int startY = RasterAPIHandler.getYSequence(ulSequence, depth);
-        int endX = RasterAPIHandler.getXSequence(lrSequence, depth);
-        int endY = RasterAPIHandler.getYSequence(lrSequence, depth);
+    private static String[][] getFileSequences(int startX, int startY,
+            int endX, int endY, int depth) {
 
         String[][] results = new String[endY - startY + 1][];
         for (int y = startY; y <= endY; y++) {
@@ -273,40 +219,10 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         sb.append(x);
         sb.append("_y");
         sb.append(y);
+        sb.append(".png");
         return sb.toString();
     }
 
-    /**
-     * Get the x sequence based on fileSequence
-     * @param fileSequence fileSequence
-     * @param depth depth of the view
-     * @return x sequence
-     */
-    private static int getXSequence(int fileSequence, int depth) {
-        return  fileSequence % (int) Math.pow(2, depth);
-    }
-
-    /**
-     * Get the y sequence based on fileSequence
-     * @param fileSequence fileSequence
-     * @param depth depth of the view
-     * @return y sequence
-     */
-    private static int getYSequence(int fileSequence, int depth) {
-        return fileSequence / (int) Math.pow(2, depth);
-    }
-
-    /**
-     * Get the file sequence based on x and y sequences
-     * fS = yS * 2^depth + xS
-     * @param xSequence x sequence
-     * @param ySequence y sequence
-     * @param depth depth of the view
-     * @return file sequence
-     */
-    private static int getFileSequence(int xSequence, int ySequence, int depth) {
-        return ySequence * (int) Math.pow(2, depth) + xSequence;
-    }
     /**
      * Given a query box or image, the LonDPP of that box or image is
      * LonDPP = (lower right longitude - upper left longitude) / width of the image (or box) in pixels
@@ -325,18 +241,13 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      * @param ulLat upper left latitude
      * @param lrLon lower right longitude
      * @param lrLat lower right latitude
-     * @param width width of the view box
-     * @param height height of the view box
      * @return true if input is within range, false otherwise
      */
     private static boolean validInput(
-            double ulLon, double ulLat, double lrLon, double lrLat, double width, double height) {
-        if (ulLon >= ROOT_LRLON || ulLat <= ROOT_LRLAT ||
-                lrLon <= ROOT_ULLON || lrLat >= ROOT_ULLAT ||
-                width <= 0 || height <= 0) {
-            return false;
-        }
-        return true;
+            double ulLon, double ulLat, double lrLon, double lrLat) {
+        return !(ulLon > lrLon || ulLat < lrLat ||
+                ulLon > ROOT_LRLON || ulLat < ROOT_LRLAT ||
+                lrLon < ROOT_ULLON || lrLat > ROOT_ULLAT);
     }
 
 
