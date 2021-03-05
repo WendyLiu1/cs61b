@@ -2,6 +2,7 @@ package bearmaps.proj2c;
 
 import bearmaps.hw4.streetmap.Node;
 import bearmaps.hw4.streetmap.StreetMapGraph;
+import bearmaps.proj2ab.KdTree;
 import bearmaps.proj2ab.Point;
 
 import java.util.*;
@@ -15,10 +16,23 @@ import java.util.*;
  */
 public class AugmentedStreetMapGraph extends StreetMapGraph {
 
+    Map<Point, Node> pointToNodeMap;
+    KdTree kdTree;
     public AugmentedStreetMapGraph(String dbPath) {
         super(dbPath);
-        // You might find it helpful to uncomment the line below:
-        // List<Node> nodes = this.getNodes();
+        List<Node> nodes = this.getNodes();
+        this.pointToNodeMap = new HashMap<>();
+        List<Point> points = new ArrayList<>();
+        for (Node node : nodes) {
+            double lon = node.lon();
+            double lat = node.lat();
+            Point newPoint = new Point(lon, lat);
+            this.pointToNodeMap.put(newPoint, node);
+            if (this.neighbors(node.id()).size() > 0) {
+                points.add(newPoint);
+            }
+        }
+        this.kdTree = new KdTree(points);
     }
 
 
@@ -30,7 +44,9 @@ public class AugmentedStreetMapGraph extends StreetMapGraph {
      * @return The id of the node in the graph closest to the target.
      */
     public long closest(double lon, double lat) {
-        return 0;
+        Point nearestPoint = this.kdTree.nearest(lon, lat);
+        Node node = this.pointToNodeMap.get(nearestPoint);
+        return node.id();
     }
 
 
