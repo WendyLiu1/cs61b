@@ -1,7 +1,9 @@
 package bearmaps.proj2c;
 
 import bearmaps.hw4.AStarSolver;
+import bearmaps.hw4.WeightedEdge;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -40,8 +42,72 @@ public class Router {
      * route.
      */
     public static List<NavigationDirection> routeDirections(AugmentedStreetMapGraph g, List<Long> route) {
-        /* fill in for part IV */
-        return null;
+        List<NavigationDirection> navigationDirects = new ArrayList<>();
+        if (route == null || route.size() < 2) {
+            return navigationDirects;
+        }
+        int prevIdx = 0;
+        NavigationDirection nd = new NavigationDirection();
+        nd.direction = NavigationDirection.START;
+        nd.distance = -1; // use negative value as flag to indicate route is invalid
+        int curIdx = 1;
+        for (WeightedEdge<Long> edge : g.neighbors(route.get(prevIdx))) {
+            if (edge.to().equals(route.get(curIdx))) {
+                nd.way = Router.getDirection(edge.getName());
+                nd.distance = edge.weight();
+                break;
+            }
+        }
+
+        Router.directionValidation(nd);
+
+        for (int nxtIdx = 2; nxtIdx < route.size(); nxtIdx++) {
+            prevIdx = nxtIdx - 2;
+            curIdx = nxtIdx - 1;
+            Long nextNode = route.get(nxtIdx);
+            Long curNode = route.get(curIdx);
+            WeightedEdge<Long> edge = null;
+            for (WeightedEdge<Long> we : g.neighbors(curNode)) {
+                if (we.to().equals(nextNode)) {
+                    edge = we;
+                    break;
+                }
+            }
+
+            if (edge == null) {
+                throw new IllegalArgumentException("Invalid route");
+            }
+
+            if ((edge.getName().isEmpty() && !nd.way.equals(NavigationDirection.UNKNOWN_ROAD)) ||
+                    (!edge.getName().isEmpty() && !edge.getName().equals(nd.way))
+            ) {
+                navigationDirects.add(nd);
+                nd = new NavigationDirection();
+                Long prevNode = route.get(prevIdx);
+                nd.direction = NavigationDirection.getDirection(
+                        NavigationDirection.bearing(g.lon(prevNode), g.lon(curNode), g.lat(prevNode), g.lat(curNode)),
+                        NavigationDirection.bearing(g.lon(curNode), g.lon(nextNode), g.lat(curNode), g.lat(nextNode))
+                );
+                nd.way = Router.getDirection(edge.getName());
+                nd.distance = edge.weight();
+            } else {
+                nd.distance += edge.weight();
+            }
+
+
+        }
+        navigationDirects.add(nd);
+        return navigationDirects;
+    }
+
+    private static String getDirection(String name) {
+        return (name == null || name.isEmpty()) ? NavigationDirection.UNKNOWN_ROAD : name;
+    }
+
+    private static void directionValidation(NavigationDirection nd) {
+        if (nd.distance < 0) {
+            throw new IllegalArgumentException("No route found, invalid route");
+        }
     }
 
     /**
